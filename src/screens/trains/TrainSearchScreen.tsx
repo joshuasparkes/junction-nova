@@ -1,10 +1,9 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Platform,
   Alert,
 } from 'react-native';
@@ -24,6 +23,11 @@ import {
 import PlaceInput from '../../components/PlaceInput';
 import DatePickerInput from '../../components/DatePickerInput';
 import TrainResultsList from '../../components/TrainResultsList';
+import {
+  screenStyles,
+  formStyles,
+  buttonStyles,
+} from '../../styles/commonStyles';
 
 type TrainSearchScreenNavigationProp = StackNavigationProp<
   TrainStackParamList,
@@ -54,10 +58,46 @@ const TrainSearchScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiKey] = useState<string>('jk_live_01j8r3grxbeve8ta0h1t5qbrvx');
 
+  useEffect(() => {
+    const testOriginId = 'place_01j804c5h1ew3ask9eh2znw3pz';
+    const testDestinationId = 'place_01j804922hfcws9mffxbj8tsv3';
+    const testDepartureDate = new Date(2025, 5, 24);
+
+    const originStationName = 'Test Origin (Eurostar London-like)';
+    const destinationStationName = 'Test Destination (Eurostar Paris-like)';
+
+    setSelectedDepartureStation({
+      id: testOriginId,
+      name: originStationName,
+      placeTypes: ['railway-station'],
+      coordinates: {latitude: 0, longitude: 0},
+      countryCode: 'GB',
+      countryName: 'United Kingdom',
+      iataCode: null,
+      timeZone: 'Europe/London',
+    });
+    setDepartureStationText(originStationName);
+
+    setSelectedArrivalStation({
+      id: testDestinationId,
+      name: destinationStationName,
+      placeTypes: ['railway-station'],
+      coordinates: {latitude: 0, longitude: 0},
+      countryCode: 'FR',
+      countryName: 'France',
+      iataCode: null,
+      timeZone: 'Europe/Paris',
+    });
+    setArrivalStationText(destinationStationName);
+
+    setDepartureDate(testDepartureDate);
+  }, []);
+
   const transformApiTrainOfferToTrain = (
     offer: ApiTrainOffer,
-    depStation?: Place | null,
-    arrStation?: Place | null,
+    depStation: Place | null | undefined,
+    arrStation: Place | null | undefined,
+    passengerCount: number,
   ): Train => {
     const firstTrip = offer.trips?.[0];
     const firstSegment = firstTrip?.segments?.[0];
@@ -77,6 +117,8 @@ const TrainSearchScreen = () => {
       class:
         firstSegment?.fare?.marketingName || firstSegment?.fare?.type || 'N/A',
       price: `${offer.price.amount} ${offer.price.currency}`,
+      passengerCount: passengerCount,
+      expiresAt: offer.expiresAt,
     };
   };
 
@@ -146,10 +188,10 @@ const TrainSearchScreen = () => {
     try {
       const createSearchUrl =
         'https://content-api.sandbox.junction.dev/train-searches';
-      const departureDateTime = `${formattedDepartureDate}T10:00:00Z`;
+      const departureDateTime = `${formattedDepartureDate}T12:30:00Z`;
       const numPassengers = parseInt(passengerCount, 10) || 1;
       const passengerAgesPayload = Array(numPassengers).fill({
-        dateOfBirth: '2000-01-01',
+        dateOfBirth: '1995-02-01',
       });
 
       const createSearchBody = {
@@ -253,7 +295,9 @@ const TrainSearchScreen = () => {
             }
           }
         } else {
-          console.log(`Attempt ${attempts} - Empty response body.`);
+          console.log(
+            `Attempt ${attempts} - Empty response body. Status: ${getOffersResponse.status}`,
+          );
         }
       }
 
@@ -263,6 +307,7 @@ const TrainSearchScreen = () => {
             offer,
             selectedDepartureStation,
             selectedArrivalStation,
+            numPassengers,
           ),
         );
         setResultsData(transformedTrains);
@@ -301,23 +346,23 @@ const TrainSearchScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={[styles.screenContainer, styles.loadingContainer]}>
-        <Text style={styles.loadingText}>Searching for trains...</Text>
+      <View style={screenStyles.loadingContainer}>
+        <Text style={screenStyles.loadingText}>Searching for trains...</Text>
       </View>
     );
   }
 
   if (showResults) {
     return (
-      <View style={styles.screenContainer}>
+      <View style={screenStyles.container}>
         <TrainResultsList results={resultsData} onNewSearch={handleNewSearch} />
       </View>
     );
   }
 
   return (
-    <View style={styles.screenContainer}>
-      <Text style={styles.screenTitle}>Search Trains</Text>
+    <View style={screenStyles.container}>
+      <Text style={screenStyles.title}>Search Trains</Text>
       <PlaceInput
         placeholder="Departure station name"
         inputText={departureStationText}
@@ -363,72 +408,30 @@ const TrainSearchScreen = () => {
         minimumDate={new Date()}
       />
 
-      <TextInput style={styles.input} placeholder="Return date (optional)" />
+      <TextInput
+        style={formStyles.input}
+        placeholder="Return date (optional)"
+        placeholderTextColor={
+          formStyles.input.placeholderTextColor || '#999999'
+        }
+      />
 
       <TextInput
-        style={styles.input}
+        style={formStyles.input}
         placeholder="Passengers (e.g., 1)"
         keyboardType="number-pad"
         value={passengerCount}
         onChangeText={setPassengerCount}
+        placeholderTextColor={
+          formStyles.input.placeholderTextColor || '#999999'
+        }
       />
 
-      <TouchableOpacity style={styles.primaryButton} onPress={handleSearch}>
-        <Text style={styles.primaryButtonText}>Search Trains</Text>
+      <TouchableOpacity style={buttonStyles.primary} onPress={handleSearch}>
+        <Text style={buttonStyles.primaryText}>Search Trains</Text>
       </TouchableOpacity>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#022E79',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-  },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 20,
-  },
-  input: {
-    width: '90%',
-    backgroundColor: '#FFFFFF',
-    color: '#000000',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 8,
-    fontSize: 16,
-    marginBottom: 5,
-    borderWidth: 1,
-    borderColor: '#DDDDDD',
-  },
-  primaryButton: {
-    backgroundColor: '#FFA500',
-    paddingVertical: 14,
-    paddingHorizontal: 35,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    width: '90%',
-  },
-  primaryButtonText: {
-    color: '#022E79',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  loadingContainer: {
-    justifyContent: 'center',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-});
 
 export default TrainSearchScreen;

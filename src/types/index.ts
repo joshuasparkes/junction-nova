@@ -150,4 +150,100 @@ export interface Train {
   duration: string;
   class: string;
   price: string;
+  passengerCount: number;
+  expiresAt?: string;
+}
+
+// Suggested types (place in src/types.ts or similar)
+
+export interface PassportInput {
+  documentNumber: string;
+  issueCountry: string;
+  nationality: string;
+  expirationDate: string; // YYYY-MM-DD
+  issueDate: string; // YYYY-MM-DD
+}
+
+export interface AddressInput {
+  addressLines: string[];
+  countryCode: string;
+  postalCode: string;
+  city: string;
+}
+
+export interface PassengerInput {
+  // For UI state, we might add a temporary unique ID if managing a dynamic list later
+  // id: string;
+  dateOfBirth: string;
+  firstName: string;
+  lastName: string;
+  gender: string;
+  email: string;
+  phoneNumber: string | null; // Can be null
+  passportInformation: PassportInput;
+  residentialAddress: AddressInput;
+}
+
+export interface TrainOffer {
+  // Or a generic Offer type
+  id: string; // This is the offerId used in the booking request
+  // For display on booking screen:
+  price?: {amount: string; currency: string};
+  segments?: any[]; // Define more accurately based on actual offer structure
+  // Example details you might want to display:
+  providerName?: string;
+  originStationName?: string;
+  destinationStationName?: string;
+  departureDateTime?: string;
+  arrivalDateTime?: string;
+}
+
+// For the API response structure
+export interface BookingResponsePassenger {
+  dateOfBirth: string;
+  firstName: string;
+  lastName: string;
+  gender: string;
+  email: string;
+  phoneNumber: string | null;
+  passportInformation: PassportInput | null; // API shows it can be null in response
+  residentialAddress: AddressInput;
+  price: {currency: string; amount: string} | null;
+}
+
+export interface BookingPrice {
+  currency: string;
+  amount: string;
+}
+
+export interface BookingDetails {
+  // Corresponds to the "booking" object in the response
+  id: string;
+  status: string;
+  passengers: BookingResponsePassenger[];
+  price: BookingPrice;
+  priceBreakdown: Array<{price: BookingPrice; breakdownType: string}>;
+  ticketInformation: Array<{
+    status: string;
+    ticketUrl: string | null;
+    collectionReference: string | null;
+  }>;
+  fareRules: Array<{title: string; body: string}>;
+  trips: Array<{segments: any[]}>; // Define segments more accurately
+  metadata?: any;
+}
+
+export interface FulfillmentOption {
+  deliveryOption: string;
+  collectionFee: BookingPrice | null;
+}
+
+export interface FulfillmentInformation {
+  fulfillmentOptions: FulfillmentOption[];
+  segmentSequence: number;
+}
+
+export interface CreateTrainBookingApiResponse {
+  booking: BookingDetails;
+  fulfillmentInformation: FulfillmentInformation[];
 }

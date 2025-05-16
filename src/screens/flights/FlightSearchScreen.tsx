@@ -1,11 +1,11 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  Platform,
   TextInput,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -18,11 +18,24 @@ import {
   formatDateForApi,
   transformApiFlightOfferToFlight,
 } from '../../utils/flightUtils';
+import {
+  formStyles,
+  buttonStyles,
+  screenStyles,
+  colors,
+} from '../../styles/commonStyles';
 
 type FlightSearchScreenNavigationProp = StackNavigationProp<
   FlightStackParamList,
   'FlightSearch'
 >;
+
+const getDefaultDepartureDate = () => {
+  return new Date(2025, 7, 24);
+};
+
+const POLLING_INTERVAL = 5000; // 5 seconds
+const MAX_POLLING_ATTEMPTS = 12; // 5s * 12 = 60 seconds total polling time
 
 const FlightSearchScreen = () => {
   const navigation = useNavigation<FlightSearchScreenNavigationProp>();
@@ -41,17 +54,65 @@ const FlightSearchScreen = () => {
   const [selectedArrivalPlace, setSelectedArrivalPlace] =
     useState<Place | null>(null);
   const [departureDate, setDepartureDate] = useState<Date | undefined>(
-    undefined,
+    getDefaultDepartureDate(),
   );
   const [passengerCount, setPassengerCount] = useState('1');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0); // Keep for visual, but it won't be tied to a fixed API delay anymore
 
   const [apiKey] = useState<string>('jk_live_01j8r3grxbeve8ta0h1t5qbrvx');
+  const currentPollAttempt = React.useRef(0); // Ref to track polling attempts
+
+  // Effect for loading progress bar - this will now reflect polling duration
+  React.useEffect(() => {
+    let progressIntervalId: NodeJS.Timeout | null = null;
+    if (isLoading) {
+      setLoadingProgress(0);
+      const totalApproximatePollingTime =
+        POLLING_INTERVAL * MAX_POLLING_ATTEMPTS;
+
+      progressIntervalId = setInterval(() => {
+        // Update progress based on current attempt vs max attempts
+        const progress = Math.min(
+          currentPollAttempt.current / MAX_POLLING_ATTEMPTS,
+          1,
+        );
+        setLoadingProgress(progress);
+
+        if (progress >= 1) {
+          if (progressIntervalId) {
+            clearInterval(progressIntervalId);
+          }
+        }
+      }, POLLING_INTERVAL / 5); // Update visual progress more frequently than polling
+    } else {
+      if (progressIntervalId) {
+        clearInterval(progressIntervalId);
+      }
+      setLoadingProgress(0);
+      currentPollAttempt.current = 0; // Reset poll attempt count
+    }
+    return () => {
+      if (progressIntervalId) {
+        clearInterval(progressIntervalId);
+      }
+    };
+  }, [isLoading]);
 
   const fetchPlaces = async (
     inputText: string,
     type: 'departure' | 'arrival',
   ) => {
+    if (inputText.length === 0) {
+      if (type === 'departure') {
+        setDeparturePlaceSuggestions([]);
+        setSelectedDeparturePlace(null);
+      } else {
+        setArrivalPlaceSuggestions([]);
+        setSelectedArrivalPlace(null);
+      }
+      return;
+    }
     if (inputText.length !== 3) {
       if (type === 'departure') {
         setDeparturePlaceSuggestions([]);
@@ -115,11 +176,108 @@ const FlightSearchScreen = () => {
     }
   };
 
+  const pollForOffers = async (
+    flightSearchId: string,
+  ): Promise<ListFlightOffersResponse | null> => {
+    const getOffersUrl = `https://content-api.sandbox.junction.dev/flight-searches/${flightSearchId}/offers`;
+    console.log(
+      `Polling attempt ${
+        currentPollAttempt.current + 1
+      } for offers: ${getOffersUrl}`,
+    );
+
+    const getOffersResponse = await fetch(getOffersUrl, {
+      method: 'GET',
+      headers: {
+        'x-api-key': apiKey,
+        Accept: 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
+      cache: 'no-store',
+    });
+
+    console.log(`Polling Response Status: ${getOffersResponse.status}`);
+    const responseContentType = getOffersResponse.headers.get('content-type');
+    console.log(`Polling Response Content-Type: ${responseContentType}`);
+
+    if (getOffersResponse.status === 200) {
+      const responseText = await getOffersResponse.text();
+      console.log(
+        'Polling successful (200 OK). Raw response text:',
+        responseText,
+      );
+      if (
+        responseText &&
+        responseText.trim().startsWith('{') &&
+        responseText.trim().endsWith('}')
+      ) {
+        try {
+          return JSON.parse(responseText) as ListFlightOffersResponse;
+        } catch (parseError) {
+          console.error(
+            'Error parsing flight offers JSON during polling:',
+            parseError,
+            'Raw text was:',
+            `"${responseText}"`,
+          );
+          throw new Error('Failed to parse offers data.'); // Or handle as no offers
+        }
+      } else {
+        console.log(
+          `Received 200 OK but non-JSON or empty response body during polling. Raw text: "${responseText}"`,
+        );
+        return null; // Treat as no offers found or handle as error
+      }
+    } else if (getOffersResponse.status === 202) {
+      currentPollAttempt.current++;
+      if (currentPollAttempt.current < MAX_POLLING_ATTEMPTS) {
+        console.log(
+          `Status 202 (Accepted). Waiting ${
+            POLLING_INTERVAL / 1000
+          }s before next poll.`,
+        );
+        await new Promise(resolve => setTimeout(resolve, POLLING_INTERVAL));
+        return pollForOffers(flightSearchId); // Recursive call
+      } else {
+        console.log('Max polling attempts reached.');
+        throw new Error(
+          'Max polling attempts reached. Offers did not become available.',
+        );
+      }
+    } else {
+      // Handle other error statuses (4xx, 5xx)
+      const errorText = await getOffersResponse.text();
+      console.error(
+        `Failed to get flight offers during polling. Status: ${getOffersResponse.status}`,
+        `URL: ${getOffersUrl}`,
+        `Response: ${errorText}`,
+      );
+      throw new Error(
+        `Failed to fetch offers. Status: ${getOffersResponse.status}`,
+      );
+    }
+  };
+
   const handleSearch = async () => {
-    const formattedDepartureDate = formatDateForApi(departureDate);
+    if (!selectedDeparturePlace || !selectedArrivalPlace || !departureDate) {
+      alert('Please select departure, arrival places and a departure date.');
+      return; // No need to set isLoading if validation fails early
+    }
+    if (!selectedDeparturePlace.id || !selectedArrivalPlace.id) {
+      alert(
+        'Departure or destination ID is missing. Please re-select the places.',
+      );
+      return;
+    }
+
     setIsLoading(true);
     setResultsData([]);
+    currentPollAttempt.current = 0; // Reset poll count for new search
+
     try {
+      const formattedDepartureDate = formatDateForApi(departureDate);
       const createSearchUrl =
         'https://content-api.sandbox.junction.dev/flight-searches';
       const departureDateTime = `${formattedDepartureDate}T14:15:22Z`;
@@ -139,7 +297,6 @@ const FlightSearchScreen = () => {
         'Creating flight search with body:',
         JSON.stringify(createSearchBody, null, 2),
       );
-
       const createSearchResponse = await fetch(createSearchUrl, {
         method: 'POST',
         headers: {
@@ -152,51 +309,35 @@ const FlightSearchScreen = () => {
 
       if (!createSearchResponse.ok) {
         const errorText = await createSearchResponse.text();
-        console.error(
-          'Failed to create flight search:',
-          createSearchResponse.status,
-          errorText,
-        );
-        alert(
+        throw new Error(
           `Error creating flight search: ${createSearchResponse.status}. ${errorText}`,
         );
-        setIsLoading(false);
-        return;
       }
 
       const locationHeader = createSearchResponse.headers.get('Location');
+      if (!locationHeader) {
+        throw new Error(
+          'Location header missing in create flight search response.',
+        );
+      }
+
       const flightSearchIdMatch = locationHeader.match(
-        /flight-searches\/(flight_search_[a-zA-Z0-9]+)\/offers/,
+        /flight-searches\/(flight_search_[a-zA-Z0-9]+)/,
       );
       const flightSearchId = flightSearchIdMatch?.[1];
-      console.log('Extracted flightSearchId:', flightSearchId);
-
-      await new Promise(resolve => setTimeout(resolve, 10000));
-
-      const getOffersUrl = `https://content-api.sandbox.junction.dev/flight-searches/${flightSearchId}/offers`;
-      console.log('Fetching flight offers from:', getOffersUrl);
-      const getOffersResponse = await fetch(getOffersUrl, {
-        method: 'GET',
-        headers: {
-          'x-api-key': apiKey,
-          Accept: 'application/json',
-        },
-      });
-      const responseText = await getOffersResponse.text();
-      console.log('Raw response text from getOffers:', responseText);
-      let offersData: ListFlightOffersResponse | null = null;
-      if (responseText) {
-        try {
-          offersData = JSON.parse(responseText);
-        } catch (parseError) {
-          setIsLoading(false);
-          return;
-        }
-      } else {
-        console.log('Received empty response body for flight offers.');
+      if (!flightSearchId) {
+        throw new Error(
+          `Could not extract flightSearchId from Location header: ${locationHeader}`,
+        );
       }
+
+      console.log('Extracted flightSearchId:', flightSearchId);
+      console.log('Starting to poll for offers...');
+
+      const offersData = await pollForOffers(flightSearchId);
+
       console.log(
-        'Parsed flight offers data:',
+        'Polling finished. Parsed flight offers data:',
         JSON.stringify(offersData, null, 2),
       );
 
@@ -207,10 +348,20 @@ const FlightSearchScreen = () => {
         setResultsData(transformedFlights);
       } else {
         setResultsData([]);
-        console.log('No flight offers found.');
+        console.log(
+          'No flight offers found after polling or data was null/empty.',
+        );
+        // Optionally show a more specific message to the user here
       }
       setShowResults(true);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Flight search process error:', error);
+      Alert.alert(
+        'Search Error',
+        error.message || 'An unexpected error occurred during flight search.',
+      );
+      setShowResults(false); // Don't show empty results screen on critical error
+      setResultsData([]);
     } finally {
       setIsLoading(false);
     }
@@ -225,17 +376,29 @@ const FlightSearchScreen = () => {
     setSelectedArrivalPlace(null);
     setDeparturePlaceSuggestions([]);
     setArrivalPlaceSuggestions([]);
-    setDepartureDate(undefined);
+    setDepartureDate(getDefaultDepartureDate());
     setPassengerCount('1');
     setIsLoading(false);
   };
 
+  const handleSelectFlight = (flight: Flight) => {
+    if (flight && flight.id) {
+      navigation.navigate('FlightBooking', {flight: flight});
+    } else {
+      console.warn(
+        'Selected flight has no ID or is undefined, cannot navigate to booking.',
+      );
+      alert('Cannot proceed with booking: selected flight data is incomplete.');
+    }
+  };
+
   if (showResults) {
     return (
-      <View style={styles.screenContainer}>
+      <View style={screenStyles.container}>
         <FlightResultsList
           results={resultsData}
           onNewSearch={handleNewSearch}
+          onSelectFlight={handleSelectFlight}
         />
       </View>
     );
@@ -243,15 +406,24 @@ const FlightSearchScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={[styles.screenContainer, styles.loadingContainer]}>
-        <Text style={styles.loadingText}>Searching for flights...</Text>
+      <View style={screenStyles.loadingContainer}>
+        <Text style={screenStyles.loadingText}>Searching for flights...</Text>
+        <View style={styles.progressBarContainer}>
+          <View
+            style={[
+              styles.progressBarFill,
+              {width: `${loadingProgress * 100}%`},
+            ]}
+          />
+        </View>
+        {/* <Text style={screenStyles.loadingText}>{`${Math.round(loadingProgress * 100)}%`}</Text> */}
       </View>
     );
   }
 
   return (
-    <View style={styles.screenContainer}>
-      <Text style={styles.screenTitle}>Search Flights</Text>
+    <View style={screenStyles.container}>
+      <Text style={screenStyles.title}>Search Flights</Text>
 
       <PlaceInput
         placeholder="Departure IATA Code (e.g., CDG)"
@@ -298,70 +470,40 @@ const FlightSearchScreen = () => {
         minimumDate={new Date()}
       />
 
-      <TextInput style={styles.input} placeholder="Return date (optional)" />
       <TextInput
-        style={styles.input} 
+        style={formStyles.input}
+        placeholder="Return date (optional)"
+      />
+      <TextInput
+        style={formStyles.input}
         placeholder="Passengers (e.g., 1)"
         keyboardType="number-pad"
         value={passengerCount}
         onChangeText={setPassengerCount}
       />
-      <TouchableOpacity style={styles.primaryButton} onPress={handleSearch}>
-        <Text style={styles.primaryButtonText}>Search Flights</Text>
+      <TouchableOpacity style={buttonStyles.primary} onPress={handleSearch}>
+        <Text style={buttonStyles.primaryText}>Search Flights</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#022E79',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+// Add new styles for the progress bar
+const styles = {
+  progressBarContainer: {
+    height: 20,
+    width: '80%',
+    backgroundColor: colors.inputBorder, // A light grey for the background of the bar
+    borderRadius: 10,
+    marginTop: 15,
+    marginBottom: 10,
+    overflow: 'hidden', // Ensures the fill stays within the rounded corners
   },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 20,
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: colors.primary, // Use your primary color for the fill
+    borderRadius: 10, // Match container's border radius
   },
-  input: {
-    width: '90%',
-    backgroundColor: '#FFFFFF',
-    color: '#000000',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 8,
-    fontSize: 16,
-    marginBottom: 5,
-    borderWidth: 1,
-    borderColor: '#DDDDDD',
-  },
-  primaryButton: {
-    backgroundColor: '#FFA500',
-    paddingVertical: 14,
-    paddingHorizontal: 35,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    width: '90%',
-  },
-  primaryButtonText: {
-    color: '#022E79',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  loadingContainer: {
-    justifyContent: 'center',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-});
+};
 
 export default FlightSearchScreen;

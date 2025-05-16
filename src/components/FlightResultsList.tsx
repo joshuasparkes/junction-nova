@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import {View, Text, FlatList, TouchableOpacity, StyleSheet} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {FlightStackParamList} from '../navigation/types'; // Adjust path as needed
@@ -14,6 +8,7 @@ import {Flight} from '../types'; // Import Flight type
 interface FlightResultsListProps {
   results: Flight[];
   onNewSearch: () => void;
+  onSelectFlight: (flight: Flight) => void;
 }
 type FlightResultsNavigationProp = StackNavigationProp<
   FlightStackParamList,
@@ -23,8 +18,9 @@ type FlightResultsNavigationProp = StackNavigationProp<
 const FlightResultsList: React.FC<FlightResultsListProps> = ({
   results,
   onNewSearch,
+  onSelectFlight,
 }) => {
-  const navigation = useNavigation<FlightResultsNavigationProp>();
+  // const navigation = useNavigation<FlightResultsNavigationProp>();
 
   const renderResultItem = ({item}: {item: Flight}) => {
     return (
@@ -41,7 +37,7 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({
         <Text style={styles.resultItemPrice}>{item.price}</Text>
         <TouchableOpacity
           style={styles.bookButton}
-          onPress={() => navigation.navigate('FlightBooking', {flight: item})}>
+          onPress={() => onSelectFlight(item)}>
           <Text style={styles.bookButtonText}>Book Flight</Text>
         </TouchableOpacity>
       </View>
