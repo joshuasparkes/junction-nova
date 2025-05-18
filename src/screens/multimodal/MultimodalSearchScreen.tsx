@@ -427,7 +427,7 @@ const MultimodalSearchScreen = () => {
           <PlaceInput
             placeholder="Origin"
             inputText={originQuery}
-            suggestions={originSuggestions as Place[]}
+            suggestions={originSuggestions}
             onInputChange={handleOriginInputChange}
             onFetchSuggestions={text => {
               debouncedFetchOriginSuggestions(text);
@@ -435,7 +435,7 @@ const MultimodalSearchScreen = () => {
                 setDestinationSuggestions([]);
               }
             }}
-            onSelectPlace={handleSelectOriginPlace as (place: Place) => void}
+            onSelectPlace={handleSelectOriginPlace}
           />
         </View>
 
@@ -454,7 +454,7 @@ const MultimodalSearchScreen = () => {
           <PlaceInput
             placeholder="Destination"
             inputText={destinationQuery}
-            suggestions={destinationSuggestions as Place[]}
+            suggestions={destinationSuggestions}
             onInputChange={handleDestinationInputChange}
             onFetchSuggestions={text => {
               debouncedFetchDestinationSuggestions(text);
@@ -462,9 +462,7 @@ const MultimodalSearchScreen = () => {
                 setOriginSuggestions([]);
               }
             }}
-            onSelectPlace={
-              handleSelectDestinationPlace as (place: Place) => void
-            }
+            onSelectPlace={handleSelectDestinationPlace}
           />
         </View>
 

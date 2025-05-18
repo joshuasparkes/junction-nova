@@ -7,15 +7,15 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
-import {Place} from '../types'; // Import Place from the shared types file
+import {ApiPlace} from '../types/multimodal'; // Use ApiPlace if that's what fetchPlacesApi provides
 
 interface PlaceInputProps {
   placeholder: string;
   inputText: string;
-  suggestions: Place[];
+  suggestions: ApiPlace[]; // Changed to ApiPlace[]
   onInputChange: (text: string) => void;
   onFetchSuggestions: (text: string) => void;
-  onSelectPlace: (place: Place) => void;
+  onSelectPlace: (place: ApiPlace) => void; // Changed to ApiPlace
   // Optional: Add onClear if needed, handled by onInputChange('') for now
 }
 
@@ -39,7 +39,7 @@ const PlaceInput: React.FC<PlaceInputProps> = ({
           if (text.length === 0) {
             // Parent handles clearing suggestions
           } else {
-            onFetchSuggestions(text);
+            onFetchSuggestions(text); // Trigger fetch in parent
           }
         }}
         // Ensure IATA codes are uppercase if needed by API (already handled in fetchPlaces)
@@ -56,8 +56,16 @@ const PlaceInput: React.FC<PlaceInputProps> = ({
                 key={item.id}
                 style={styles.suggestionItem}
                 onPress={() => onSelectPlace(item)}>
-                <Text style={styles.suggestionText}>
-                  {item.name} ({item.iataCode || item.countryCode || item.type})
+                <Text style={styles.suggestionTextName}>{item.name}</Text>
+                <Text style={styles.suggestionTextType}>
+                  {/* Display type, fallback to iataCode or countryCode if type is 'unknown' or generic */}
+                  Type:{' '}
+                  {item.type !== 'unknown'
+                    ? item.type
+                    : item.iataCode ||
+                      item.stationCode ||
+                      item.countryCode ||
+                      'N/A'}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -101,13 +109,20 @@ const styles = StyleSheet.create({
   suggestionsList: {},
   suggestionItem: {
     paddingHorizontal: 15,
-    paddingVertical: 12,
+    paddingVertical: 10, // Adjusted padding
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
   },
-  suggestionText: {
-    fontSize: 16,
+  suggestionTextName: {
+    // Style for the place name
+    fontSize: 15, // Slightly smaller if two lines
+    fontWeight: 'bold',
     color: '#333333',
+  },
+  suggestionTextType: {
+    // Style for the place type
+    fontSize: 13,
+    color: '#666666',
   },
 });
 

@@ -194,56 +194,57 @@ export async function pollOffers(
 export async function fetchPlacesApi(query: string): Promise<ApiPlace[]> {
   const headers = {Accept: 'application/json', 'x-api-key': API_KEY};
   const encodedQuery = encodeURIComponent(query);
-  const limit = 5; // Consistent with TrainSearchScreen if it uses a limit
+  const limit = 10; // Fetch a few more if searching broadly
 
-  const stationUrl = `${BASE_URL}/places?filter[type][eq]=railway-station&filter[name][like]=${encodedQuery}&page[limit]=${limit}`;
-  const airportUrl = `${BASE_URL}/places?filter[type][eq]=airport&filter[name][like]=${encodedQuery}&page[limit]=${limit}`;
+  // Make a single call, omitting filter[type][eq] to get all matching place types
+  const url = `${BASE_URL}/places?filter[name][like]=${encodedQuery}&page[limit]=${limit}`;
 
-  console.log(`[fetchPlacesApi] Fetching stations URL: ${stationUrl}`);
-  console.log(`[fetchPlacesApi] Fetching airports URL: ${airportUrl}`);
+  console.log(`[fetchPlacesApi] Fetching all place types URL: ${url}`);
 
   try {
-    const [stationResponse, airportResponse] = await Promise.all([
-      fetch(stationUrl, {headers}),
-      fetch(airportUrl, {headers}),
-    ]);
+    const response = await fetch(url, {headers});
 
-    const stationJson = stationResponse.ok
-      ? await stationResponse.json()
-      : {items: []};
-    const airportJson = airportResponse.ok
-      ? await airportResponse.json()
-      : {items: []};
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        `[fetchPlacesApi] API call failed: ${response.status}`,
+        errorText,
+      );
+      throw new Error(
+        `Failed to fetch places: ${response.status} ${errorText}`,
+      );
+    }
 
-    console.log('[fetchPlacesApi] Station JSON response:', stationJson);
-    console.log('[fetchPlacesApi] Airport JSON response:', airportJson);
+    const jsonResponse = await response.json();
 
-    const stations: ApiPlace[] = (stationJson.items || []).map((s: any) => ({
-      id: s.id || `station_${s.name}_${Date.now()}`, // Fallback id
-      name: s.name || 'Unknown Station',
-      type: 'railway-station',
-      iataCode: s.iataCode, // Used by PlaceInput if available
-      countryCode: s.countryCode, // Used by PlaceInput
-      cityName: s.cityName,
-      stationCode: s.stationCode,
+    console.log('[fetchPlacesApi] Raw places JSON response:', jsonResponse);
+
+    // The API returns { items: [...] }
+    const places: ApiPlace[] = (jsonResponse.items || []).map((p: any) => ({
+      id: p.id,
+      name: p.name || 'Unknown Place',
+      // The API response has 'placeTypes' as an array. We'll take the first or join them.
+      type:
+        p.placeTypes && p.placeTypes.length > 0
+          ? p.placeTypes.join(', ')
+          : 'unknown',
+      iataCode: p.iataCode,
+      stationCode: p.stationCode, // If available
+      countryCode: p.countryCode,
+      cityName: p.cityName, // If available from API
+      // coordinates: p.coordinates, // If needed later
     }));
-    const airports: ApiPlace[] = (airportJson.items || []).map((a: any) => ({
-      id: a.id || `airport_${a.name}_${Date.now()}`, // Fallback id
-      name: a.name || 'Unknown Airport',
-      type: 'airport',
-      iataCode: a.iataCode,
-      countryCode: a.countryCode,
-      cityName: a.cityName,
-    }));
 
-    const combinedPlaces = [...stations, ...airports];
     console.log(
-      `[fetchPlacesApi] Combined places count: ${combinedPlaces.length}. Places:`,
-      combinedPlaces,
+      `[fetchPlacesApi] Mapped places count: ${places.length}. Places:`,
+      places,
     );
-    return combinedPlaces;
+    return places;
   } catch (error) {
-    console.error('[fetchPlacesApi] Failed to fetch places from API:', error);
+    console.error(
+      '[fetchPlacesApi] Failed to fetch or map places from API:',
+      error,
+    );
     return [];
   }
 }
