@@ -8,17 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		0C80B921A6F3F58F76C31292 /* libPods-JunctionNova.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-JunctionNova.a */; };
+		13146C055DFF4042818407DD /* Figtree-Italic-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 010B668686964BD7BE0C7251 /* Figtree-Italic-VariableFont_wght.ttf */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		569D544391604A779355BF41 /* Figtree-VariableFont_wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 25195182EA08455A8C313209 /* Figtree-VariableFont_wght.ttf */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		AA44838D5065AEFD4C79B5DC /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		010B668686964BD7BE0C7251 /* Figtree-Italic-VariableFont_wght.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Figtree-Italic-VariableFont_wght.ttf"; path = "../assets/fonts/Figtree-Italic-VariableFont_wght.ttf"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* JunctionNova.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JunctionNova.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = JunctionNova/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = JunctionNova/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = JunctionNova/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		25195182EA08455A8C313209 /* Figtree-VariableFont_wght.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Figtree-VariableFont_wght.ttf"; path = "../assets/fonts/Figtree-VariableFont_wght.ttf"; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-JunctionNova.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-JunctionNova.debug.xcconfig"; path = "Target Support Files/Pods-JunctionNova/Pods-JunctionNova.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-JunctionNova.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-JunctionNova.release.xcconfig"; path = "Target Support Files/Pods-JunctionNova/Pods-JunctionNova.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-JunctionNova.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-JunctionNova.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -75,6 +79,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				B5DCCB3E46224FBEA4DF1A3E /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -87,6 +92,16 @@
 				13B07F961A680F5B00A75B9A /* JunctionNova.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B5DCCB3E46224FBEA4DF1A3E /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				010B668686964BD7BE0C7251 /* Figtree-Italic-VariableFont_wght.ttf */,
+				25195182EA08455A8C313209 /* Figtree-VariableFont_wght.ttf */,
+			);
+			name = Resources;
+			path = "";
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
@@ -161,6 +176,8 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				AA44838D5065AEFD4C79B5DC /* PrivacyInfo.xcprivacy in Resources */,
+				13146C055DFF4042818407DD /* Figtree-Italic-VariableFont_wght.ttf in Resources */,
+				569D544391604A779355BF41 /* Figtree-VariableFont_wght.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

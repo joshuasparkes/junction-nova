@@ -7,16 +7,15 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
-import {ApiPlace} from '../types/multimodal'; // Use ApiPlace if that's what fetchPlacesApi provides
+import {ApiPlace} from '../types';
 
 interface PlaceInputProps {
   placeholder: string;
   inputText: string;
-  suggestions: ApiPlace[]; // Changed to ApiPlace[]
+  suggestions: ApiPlace[];
   onInputChange: (text: string) => void;
   onFetchSuggestions: (text: string) => void;
   onSelectPlace: (place: ApiPlace) => void; // Changed to ApiPlace
-  // Optional: Add onClear if needed, handled by onInputChange('') for now
 }
 
 const PlaceInput: React.FC<PlaceInputProps> = ({
@@ -42,8 +41,6 @@ const PlaceInput: React.FC<PlaceInputProps> = ({
             onFetchSuggestions(text); // Trigger fetch in parent
           }
         }}
-        // Ensure IATA codes are uppercase if needed by API (already handled in fetchPlaces)
-        // autoCapitalize="characters" // Optional: might help if only using IATA
       />
       {suggestions.length > 0 && (
         <View style={styles.suggestionsContainer}>

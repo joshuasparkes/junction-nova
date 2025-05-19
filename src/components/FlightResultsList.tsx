@@ -4,6 +4,12 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {FlightStackParamList} from '../navigation/types'; // Adjust path as needed
 import {Flight} from '../types'; // Import Flight type
+import {
+  colors,
+  buttonStyles,
+  cardStyles,
+  screenStyles,
+} from '../styles/commonStyles';
 
 interface FlightResultsListProps {
   results: Flight[];
@@ -24,128 +30,64 @@ const FlightResultsList: React.FC<FlightResultsListProps> = ({
 
   const renderResultItem = ({item}: {item: Flight}) => {
     return (
-      <View style={styles.resultItemCard}>
-        <Text style={styles.resultItemTitle}>
+      <View style={cardStyles.container}>
+        <Text style={cardStyles.title}>
           {item.airline}: {item.from} to {item.to}
         </Text>
-        <Text style={styles.resultItemDetail}>
+        <Text style={cardStyles.text}>
           Departure: {item.departureTime} - Arrival: {item.arrivalTime}
         </Text>
-        <Text style={styles.resultItemDetail}>
+        <Text style={cardStyles.text}>
           Duration: {item.duration} ({item.stops})
         </Text>
-        <Text style={styles.resultItemPrice}>{item.price}</Text>
+        <Text style={cardStyles.price}>{item.price}</Text>
         <TouchableOpacity
-          style={styles.bookButton}
+          style={[buttonStyles.primary, styles.bookButton]}
           onPress={() => onSelectFlight(item)}>
-          <Text style={styles.bookButtonText}>Book Flight</Text>
+          <Text style={buttonStyles.primaryText}>Book Flight</Text>
         </TouchableOpacity>
       </View>
     );
   };
 
   return (
-    <View style={styles.resultsContainer}>
-      <Text style={styles.screenTitle}>Flight Results</Text>
+    <View style={screenStyles.container}>
+      <Text style={screenStyles.title}>Flight Results</Text>
       {results.length > 0 ? (
         <FlatList
           data={results}
           renderItem={renderResultItem}
           keyExtractor={item => item.id}
-          style={styles.resultsList}
+          contentContainerStyle={[
+            screenStyles.flatListContent,
+            styles.listContent,
+          ]}
         />
       ) : (
         <Text style={styles.placeholderText}>
           No results found for Flights.
         </Text>
       )}
-      <TouchableOpacity style={styles.primaryButton} onPress={onNewSearch}>
-        <Text style={styles.primaryButtonText}>New Search</Text>
+      <TouchableOpacity style={buttonStyles.primary} onPress={onNewSearch}>
+        <Text style={buttonStyles.primaryText}>New Search</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
+// Only keep styles that aren't in commonStyles
 const styles = StyleSheet.create({
-  resultsContainer: {
-    flex: 1,
-    width: '100%', // Ensure it takes full width within the parent
-    alignItems: 'center',
-    padding: 20, // Maintain padding consistency
-  },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF', // Assuming parent background is dark
-    marginBottom: 20,
-  },
-  resultsList: {
-    width: '100%', // Take full width within container
-    marginTop: 10,
-  },
-  resultItemCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
-    marginHorizontal: 5, // Keep horizontal margin if desired
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  resultItemTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 5,
-  },
-  resultItemDetail: {
-    fontSize: 14,
-    color: '#555555',
-    marginBottom: 3,
-  },
-  resultItemPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#022E79',
-    marginTop: 8,
-    textAlign: 'right',
-    marginBottom: 10,
-  },
   bookButton: {
-    backgroundColor: '#28A745',
-    paddingVertical: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 5,
-  },
-  bookButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+    marginTop: 10,
   },
   placeholderText: {
     fontSize: 16,
-    color: '#FFFFFF', // Assuming parent background is dark
+    color: colors.textDark,
     textAlign: 'center',
     marginVertical: 20,
   },
-  primaryButton: {
-    // Keep button style consistent
-    backgroundColor: '#FFA500',
-    paddingVertical: 14,
-    paddingHorizontal: 35,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20, // Adjust spacing if needed
-    width: '90%', // Maintain button width
-  },
-  primaryButtonText: {
-    color: '#022E79',
-    fontSize: 18,
-    fontWeight: 'bold',
+  listContent: {
+    width: '100%',
   },
 });
 

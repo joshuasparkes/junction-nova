@@ -1,17 +1,17 @@
 import {StyleSheet, Platform} from 'react-native';
 
 export const colors = {
-  primary: '#FFA500',
-  primaryText: '#022E79',
-  background: '#022E79',
+  primary: '#080D4D',
+  primaryText: '#FFFFFF',
+  background: '#f5f5f7',
   white: '#FFFFFF',
   inputBackground: '#FFFFFF',
   inputText: '#000000',
   inputBorder: '#DDDDDD',
   placeholderText: '#999999',
-  screenTitle: '#FFFFFF',
-  loadingText: '#FFFFFF',
-  textDark: '#333333',
+  screenTitle: '#080D4D',
+  loadingText: '#080D4D',
+  textDark: '#080D4D',
   textMedium: '#444444',
   cardBackground: '#FFFFFF',
   shadowColor: '#000000',
@@ -20,13 +20,13 @@ export const colors = {
 export const formStyles = StyleSheet.create({
   label: {
     fontSize: 16,
-    color: colors.white,
+    color: colors.textDark,
     marginBottom: 5,
     width: '90%',
     textAlign: 'left',
   },
   input: {
-    width: '90%',
+    width: '100%',
     backgroundColor: colors.inputBackground,
     color: colors.inputText,
     paddingHorizontal: 15,
@@ -34,24 +34,22 @@ export const formStyles = StyleSheet.create({
     borderRadius: 8,
     fontSize: 16,
     marginBottom: 15,
-    borderWidth: 1,
-    borderColor: colors.inputBorder,
   },
 });
 
 export const buttonStyles = StyleSheet.create({
   primary: {
     backgroundColor: colors.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 35,
-    borderRadius: 8,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 20,
-    width: '90%',
+    width: '100%',
+    marginVertical: 10,
   },
   primaryText: {
     color: colors.primaryText,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });
@@ -75,10 +73,11 @@ export const screenStyles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.screenTitle,
+    fontWeight: '600',
+    color: colors.textDark,
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: 'left',
+    fontFamily: 'Figtree-SemiBold',
   },
   loadingContainer: {
     flex: 1,
@@ -88,8 +87,19 @@ export const screenStyles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 18,
-    color: colors.loadingText,
+    color: colors.textDark,
     textAlign: 'center',
+  },
+  titleContainer: {
+    width: '100%',
+    paddingLeft: 20,
+  },
+  listContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  flatListContent: {
+    alignItems: 'center',
   },
 });
 
@@ -99,10 +109,10 @@ export const cardStyles = StyleSheet.create({
     borderRadius: 8,
     padding: 15,
     marginBottom: 20,
-    width: '95%',
+    width: '100%',
     shadowColor: colors.shadowColor,
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.1,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.0,
     shadowRadius: 3,
     elevation: 2,
   },
@@ -111,20 +121,30 @@ export const cardStyles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.textDark,
     marginBottom: 8,
+    fontFamily: 'Figtree-Bold',
   },
   text: {
     fontSize: 15,
     color: colors.textMedium,
     marginBottom: 4,
+    fontFamily: 'Figtree-Regular',
   },
   price: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: colors.primaryText,
+    color: colors.primary,
     marginTop: 8,
     textAlign: 'right',
   },
 });
-
-// You can also create utility style objects if needed for dynamic styling
-// or for styles not suitable for StyleSheet.create, though StyleSheet is preferred for performance.
+export const globalTextStyles = StyleSheet.create({
+  default: {
+    fontFamily: 'Figtree-Regular',
+  },
+  bold: {
+    fontFamily: 'Figtree-Bold',
+  },
+  semiBold: {
+    fontFamily: 'Figtree-SemiBold',
+  },
+});

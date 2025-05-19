@@ -29,8 +29,7 @@ type FlightBookingScreenNavigationProp = StackNavigationProp<
   'FlightBooking'
 >;
 
-const API_BASE_URL = 'https://content-api.sandbox.junction.dev';
-const API_KEY = 'jk_live_01j8r3grxbeve8ta0h1t5qbrvx';
+const API_BASE = 'http://localhost:3000';
 
 const FlightBookingScreen = () => {
   const route = useRoute<FlightBookingScreenRouteProp>();
@@ -129,7 +128,7 @@ const FlightBookingScreen = () => {
           firstName: firstName,
           lastName: lastName,
           gender: gender.toLowerCase(),
-          email: email,
+          email,
           phoneNumber: phone,
           passportInformation: {
             documentNumber: passportDocumentNumber,
@@ -149,69 +148,33 @@ const FlightBookingScreen = () => {
     };
 
     try {
-      console.log(
-        'Creating booking with payload:',
-        JSON.stringify(bookingPayload, null, 2),
-      );
-      const createBookingResponse = await fetch(`${API_BASE_URL}/bookings`, {
+      const resp = await fetch(`${API_BASE}/bookings`, {
         method: 'POST',
         headers: {
-          'x-api-key': API_KEY,
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
         body: JSON.stringify(bookingPayload),
       });
 
-      const createBookingDataText = await createBookingResponse.text();
-      console.log('Create booking response text:', createBookingDataText);
-
-      if (!createBookingResponse.ok) {
-        Alert.alert(
-          'Booking Creation Failed',
-          `Error ${createBookingResponse.status}: ${
-            createBookingDataText || 'Unknown error'
-          }`,
-        );
-        setIsLoading(false);
-        return;
+      const text = await resp.text();
+      if (!resp.ok) {
+        throw new Error(`Booking failed: ${resp.status} – ${text}`);
       }
 
-      const createBookingData = JSON.parse(createBookingDataText);
-      const bookingId = createBookingData.id;
-      const bookingStatus = createBookingData.status;
-      const bookingPrice = createBookingData.price?.amount
-        ? `${createBookingData.price.currency} ${createBookingData.price.amount}`
-        : flight.price;
-
-      if (!bookingId) {
-        Alert.alert(
-          'Booking Creation Error',
-          'Could not retrieve booking ID from the server response.',
-        );
-        setIsLoading(false);
-        return;
-      }
-      console.log(
-        'Booking created successfully. Booking ID:',
-        bookingId,
-        'Status:',
-        bookingStatus,
-      );
-
+      const data = JSON.parse(text);
       navigation.navigate('FlightBookingHoldScreen', {
-        bookingId: bookingId,
+        bookingId: data.id,
         flightDetails: flight,
         passengerName: `${firstName} ${lastName}`,
-        bookingStatus: bookingStatus || 'pending',
-        bookingPrice: bookingPrice,
+        bookingStatus: data.status || 'pending',
+        bookingPrice: data.price?.amount
+          ? `${data.price.currency} ${data.price.amount}`
+          : flight.price,
       });
-    } catch (error: any) {
-      console.error('Booking creation process error:', error);
-      Alert.alert(
-        'Booking Error',
-        error.message || 'An unexpected error occurred.',
-      );
+    } catch (err: any) {
+      console.error('Booking error:', err);
+      Alert.alert('Booking Error', err.message);
     } finally {
       setIsLoading(false);
     }
@@ -228,11 +191,9 @@ const FlightBookingScreen = () => {
 
   return (
     <ScrollView
-    style={screenStyles.scrollViewOuter} // Changed from screenStyles.scrollContainer
-    contentContainerStyle={screenStyles.contentContainer}
+      style={screenStyles.scrollViewOuter} // Changed from screenStyles.scrollContainer
+      contentContainerStyle={screenStyles.contentContainer}
       keyboardShouldPersistTaps="handled">
-      <Text style={screenStyles.title}>Book Flight</Text>
-
       <View style={cardStyles.container}>
         <Text style={cardStyles.title}>
           {flight.airline}: {flight.from} to {flight.to}
@@ -398,7 +359,7 @@ const styles = {
     marginBottom: 10,
     width: '90%',
     textAlign: 'left',
-    color: colors.white,
+    color: colors.textDark,
   },
 };
 

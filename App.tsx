@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   StatusBar,
   Platform,
-  Dimensions,
 } from 'react-native';
 import {
   NavigationContainer,
@@ -20,7 +19,7 @@ import {
 } from '@react-navigation/bottom-tabs';
 import {createStackNavigator} from '@react-navigation/stack';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-
+import {globalTextStyles} from './src/styles/commonStyles';
 import {
   FlightStackParamList,
   HotelStackParamList,
@@ -44,6 +43,7 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MultimodalSearchScreen from './src/screens/multimodal/MultimodalSearchScreen';
 import FlightBookingHoldScreen from './src/screens/flights/FlightBookingHoldScreen';
 import BookingsScreen from './src/screens/bookings/BookingsScreen';
+import EntryScreen from './src/screens/onboarding/Entry';
 
 const logoImage = require('./assets/logo.png');
 
@@ -54,6 +54,7 @@ const CarRentalStack = createStackNavigator<CarRentalStackParamList>();
 const MultimodalStack = createStackNavigator<MultimodalStackParamList>();
 const BookingsStack = createStackNavigator<BookingsStackParamList>();
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
 const commonStackScreenOptions = {
   headerShown: false,
@@ -208,59 +209,66 @@ const App = () => {
           <Image source={logoImage} style={styles.logo} resizeMode="contain" />
         </View>
         <NavigationContainer>
-          <Tab.Navigator
-            screenOptions={tabScreenOptions}
-            sceneContainerStyle={{
-              backgroundColor: styles.appBackground.backgroundColor,
-            }}>
-            <Tab.Screen
-              name="MultimodalTab"
-              component={MultimodalStackNavigator}
-              options={{tabBarLabel: 'Multi'}}
-            />
-            <Tab.Screen
-              name="FlightsTab"
-              component={FlightStackNavigator}
-              options={{tabBarLabel: 'Flights'}}
-            />
-            <Tab.Screen
-              name="HotelsTab"
-              component={HotelStackNavigator}
-              options={{tabBarLabel: 'Hotels'}}
-            />
-            <Tab.Screen
-              name="TrainsTab"
-              component={TrainStackNavigator}
-              options={{tabBarLabel: 'Trains'}}
-            />
-            <Tab.Screen
-              name="CarsTab"
-              component={CarRentalStackNavigator}
-              options={{tabBarLabel: 'Cars'}}
-            />
-            <Tab.Screen
-              name="BookingsTab"
-              component={BookingsStackNavigator}
-              options={{tabBarLabel: 'Bookings'}}
-            />
-          </Tab.Navigator>
+          <Stack.Navigator screenOptions={{headerShown: false}}>
+            <Stack.Screen name="Entry" component={EntryScreen} />
+            <Stack.Screen name="Main" component={MainTabs} />
+          </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
 };
 
+const MainTabs = () => (
+  <Tab.Navigator
+    screenOptions={tabScreenOptions}
+    sceneContainerStyle={{
+      backgroundColor: styles.appBackground.backgroundColor,
+    }}>
+    <Tab.Screen
+      name="MultimodalTab"
+      component={MultimodalStackNavigator}
+      options={{tabBarLabel: 'Multi'}}
+    />
+    <Tab.Screen
+      name="FlightsTab"
+      component={FlightStackNavigator}
+      options={{tabBarLabel: 'Flights'}}
+    />
+    <Tab.Screen
+      name="HotelsTab"
+      component={HotelStackNavigator}
+      options={{tabBarLabel: 'Hotels'}}
+    />
+    <Tab.Screen
+      name="TrainsTab"
+      component={TrainStackNavigator}
+      options={{tabBarLabel: 'Trains'}}
+    />
+    <Tab.Screen
+      name="CarsTab"
+      component={CarRentalStackNavigator}
+      options={{tabBarLabel: 'Cars'}}
+    />
+    <Tab.Screen
+      name="BookingsTab"
+      component={BookingsStackNavigator}
+      options={{tabBarLabel: 'Trips'}}
+    />
+  </Tab.Navigator>
+);
+
 const styles = StyleSheet.create({
   safeAreaTop: {
     flex: 0,
-    backgroundColor: '#022E79',
+    backgroundColor: '#f5f5f7',
   },
   safeAreaBottom: {
     flex: 1,
-    backgroundColor: '#012460',
+    backgroundColor: '#f5f5f7',
   },
   appBackground: {
-    backgroundColor: '#022E79',
+    backgroundColor: '#f5f5f7',
   },
   headerContainer: {
     paddingTop: Platform.OS === 'ios' ? 10 : 15,
@@ -268,14 +276,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#022E79',
+    backgroundColor: '#f5f5f7',
   },
   logo: {
     width: 160,
     height: 45,
   },
   tabBar: {
-    backgroundColor: '#012460',
+    backgroundColor: '#f5f5f7',
     borderTopWidth: 0,
     shadowColor: '#000',
     shadowOffset: {
@@ -285,7 +293,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 10,
-    height: Platform.OS === 'ios' ? 90 : 70,
+    height: Platform.OS === 'ios' ? 60 : 70,
   },
   tabBarItem: {
     paddingVertical: Platform.OS === 'ios' ? 8 : 4,
@@ -293,10 +301,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabActive: {
-    color: '#FFFFFF',
+    color: '#080D4D',
   },
   tabInactive: {
-    color: '#A0A0A0',
+    color: '#BCBCBC',
   },
   tabLabel: {
     fontSize: 12,
@@ -304,5 +312,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+
+// Set default props for Text
+Text.defaultProps = Text.defaultProps || {};
+Text.defaultProps.style = globalTextStyles.default;
 
 export default App;

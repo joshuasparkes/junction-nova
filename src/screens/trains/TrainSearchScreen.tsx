@@ -1,12 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Platform,
-  Alert,
-} from 'react-native';
+import {View, Text, TextInput, TouchableOpacity, Alert} from 'react-native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {TrainStackParamList} from '../../navigation/types';
 import {
@@ -27,6 +20,7 @@ import {
   screenStyles,
   formStyles,
   buttonStyles,
+  colors,
 } from '../../styles/commonStyles';
 
 type TrainSearchScreenNavigationProp = StackNavigationProp<
@@ -43,7 +37,7 @@ const TrainSearchScreen = () => {
   const [departureStationText, setDepartureStationText] = useState('');
   const [arrivalStationText, setArrivalStationText] = useState('');
   const [departureDate, setDepartureDate] = useState<Date | undefined>(
-    undefined,
+    new Date(2025, 5, 24),
   );
   const [passengerCount, setPassengerCount] = useState('1');
   const [departureStationSuggestions, setDepartureStationSuggestions] =
@@ -61,23 +55,19 @@ const TrainSearchScreen = () => {
   useEffect(() => {
     const testOriginId = 'place_01j804c5h1ew3ask9eh2znw3pz';
     const testDestinationId = 'place_01j804922hfcws9mffxbj8tsv3';
-    const testDepartureDate = new Date(2025, 5, 24);
-
-    const originStationName = 'Test Origin (Eurostar London-like)';
-    const destinationStationName = 'Test Destination (Eurostar Paris-like)';
-
+    const originStationName = 'London St Pancras Intl';
+    const destinationStationName = 'Paris Gare du Nord';
     setSelectedDepartureStation({
       id: testOriginId,
       name: originStationName,
       placeTypes: ['railway-station'],
       coordinates: {latitude: 0, longitude: 0},
       countryCode: 'GB',
-      countryName: 'United Kingdom',
+      countryName: 'UK',
       iataCode: null,
       timeZone: 'Europe/London',
     });
     setDepartureStationText(originStationName);
-
     setSelectedArrivalStation({
       id: testDestinationId,
       name: destinationStationName,
@@ -89,15 +79,13 @@ const TrainSearchScreen = () => {
       timeZone: 'Europe/Paris',
     });
     setArrivalStationText(destinationStationName);
-
-    setDepartureDate(testDepartureDate);
   }, []);
 
   const transformApiTrainOfferToTrain = (
     offer: ApiTrainOffer,
     depStation: Place | null | undefined,
     arrStation: Place | null | undefined,
-    passengerCount: number,
+    passengerCountVal: number,
   ): Train => {
     const firstTrip = offer.trips?.[0];
     const firstSegment = firstTrip?.segments?.[0];
@@ -105,8 +93,8 @@ const TrainSearchScreen = () => {
     return {
       id: offer.id,
       operator: firstSegment?.vehicle?.name || 'Unknown Operator',
-      from: depStation?.name || firstSegment?.origin || 'N/A',
-      to: arrStation?.name || firstSegment?.destination || 'N/A',
+      from: depStation?.name || firstSegment?.origin?.name || 'N/A',
+      to: arrStation?.name || firstSegment?.destination?.name || 'N/A',
       departureTime: firstSegment
         ? formatApiTime(firstSegment.departureAt)
         : 'N/A',
@@ -117,7 +105,7 @@ const TrainSearchScreen = () => {
       class:
         firstSegment?.fare?.marketingName || firstSegment?.fare?.type || 'N/A',
       price: `${offer.price.amount} ${offer.price.currency}`,
-      passengerCount: passengerCount,
+      passengerCount: passengerCountVal,
       expiresAt: offer.expiresAt,
     };
   };
@@ -138,8 +126,6 @@ const TrainSearchScreen = () => {
     const url = `https://content-api.sandbox.junction.dev/places?filter[name][like]=${encodeURIComponent(
       inputText,
     )}&filter[type][eq]=railway-station&page[limit]=5`;
-
-    console.log(`Fetching railway stations for: ${inputText}`);
 
     const headers = {
       'x-api-key': apiKey,
@@ -169,16 +155,15 @@ const TrainSearchScreen = () => {
   };
 
   const handleSearch = async () => {
-    if (!selectedDepartureStation || !selectedArrivalStation) {
+    if (
+      !selectedDepartureStation ||
+      !selectedArrivalStation ||
+      !departureDate
+    ) {
       Alert.alert(
-        'Error',
-        'Please select both departure and arrival stations.',
+        'Validation Error',
+        'Please select departure, arrival stations and a departure date.',
       );
-      return;
-    }
-    const formattedDepartureDate = formatDateForApi(departureDate);
-    if (!formattedDepartureDate) {
-      Alert.alert('Error', 'Please select a departure date.');
       return;
     }
 
@@ -186,6 +171,7 @@ const TrainSearchScreen = () => {
     setResultsData([]);
 
     try {
+      const formattedDepartureDate = formatDateForApi(departureDate);
       const createSearchUrl =
         'https://content-api.sandbox.junction.dev/train-searches';
       const departureDateTime = `${formattedDepartureDate}T12:30:00Z`;
@@ -201,11 +187,6 @@ const TrainSearchScreen = () => {
         returnDepartureAfter: null,
         passengerAges: passengerAgesPayload,
       };
-
-      console.log(
-        'Creating train search with body:',
-        JSON.stringify(createSearchBody, null, 2),
-      );
 
       const createSearchResponse = await fetch(createSearchUrl, {
         method: 'POST',
@@ -226,14 +207,15 @@ const TrainSearchScreen = () => {
 
       const locationHeader = createSearchResponse.headers.get('Location');
       const trainSearchIdMatch = locationHeader?.match(
-        /train-searches\/(train_search_[a-zA-Z0-9]+)\/offers/,
+        /train-searches\/(train_search_[a-zA-Z0-9]+)/,
       );
       const trainSearchId = trainSearchIdMatch?.[1];
 
       if (!trainSearchId) {
-        throw new Error('Could not parse trainSearchId from Location header');
+        throw new Error(
+          `Could not parse trainSearchId from Location header: ${locationHeader}`,
+        );
       }
-      console.log('Extracted trainSearchId:', trainSearchId);
 
       let attempts = 0;
       let offersData: ListTrainOffersResponse | null = null;
@@ -241,8 +223,6 @@ const TrainSearchScreen = () => {
 
       while (attempts < MAX_POLLING_ATTEMPTS && !offersFound) {
         attempts++;
-        console.log(`Polling for train offers, attempt ${attempts}...`);
-
         if (attempts > 1) {
           await new Promise(resolve => setTimeout(resolve, POLLING_INTERVAL));
         }
@@ -253,51 +233,27 @@ const TrainSearchScreen = () => {
           headers: {'x-api-key': apiKey, Accept: 'application/json'},
         });
 
-        const responseText = await getOffersResponse.text();
-        console.log(
-          `Attempt ${attempts} - Raw train offers response:`,
-          responseText,
-        );
-
-        if (!getOffersResponse.ok) {
-          console.error(
-            `Attempt ${attempts} - Failed to get train offers: ${getOffersResponse.status}`,
-          );
-          if (attempts === MAX_POLLING_ATTEMPTS) {
-            Alert.alert(
-              'Error',
-              `Failed to fetch train offers after ${attempts} attempts. Status: ${getOffersResponse.status}`,
-            );
-          }
-          continue;
-        }
-
-        if (responseText) {
-          try {
+        if (getOffersResponse.status === 200) {
+          const responseText = await getOffersResponse.text();
+          if (responseText) {
             const parsedData: ListTrainOffersResponse =
               JSON.parse(responseText);
             if (parsedData?.items?.length > 0) {
               offersData = parsedData;
               offersFound = true;
-              console.log(`Attempt ${attempts} - Train offers found!`);
-            } else {
-              console.log(
-                `Attempt ${attempts} - Offers response OK but no items found.`,
-              );
-            }
-          } catch (parseError) {
-            console.error(
-              `Attempt ${attempts} - Failed to parse train offers JSON:`,
-              parseError,
-            );
-            if (attempts === MAX_POLLING_ATTEMPTS) {
-              Alert.alert('Error', 'Failed to parse train offers response.');
+              break;
             }
           }
-        } else {
-          console.log(
-            `Attempt ${attempts} - Empty response body. Status: ${getOffersResponse.status}`,
+        } else if (getOffersResponse.status !== 202) {
+          const errorText = await getOffersResponse.text();
+          console.error(
+            `Attempt ${attempts} - Error fetching offers: ${getOffersResponse.status}, ${errorText}`,
           );
+          if (attempts === MAX_POLLING_ATTEMPTS) {
+            throw new Error(
+              `Failed to fetch train offers. Status: ${getOffersResponse.status}`,
+            );
+          }
         }
       }
 
@@ -313,10 +269,10 @@ const TrainSearchScreen = () => {
         setResultsData(transformedTrains);
       } else {
         setResultsData([]);
-        console.log('No train offers found after polling.');
-        if (!offersFound && attempts === MAX_POLLING_ATTEMPTS) {
-          Alert.alert('Timeout', 'Could not retrieve train offers in time.');
-        }
+        Alert.alert(
+          'No Results',
+          'No train offers found after polling, or an error occurred.',
+        );
       }
       setShowResults(true);
     } catch (error: any) {
@@ -339,7 +295,7 @@ const TrainSearchScreen = () => {
     setSelectedArrivalStation(null);
     setDepartureStationSuggestions([]);
     setArrivalStationSuggestions([]);
-    setDepartureDate(undefined);
+    setDepartureDate(new Date(2025, 5, 24));
     setPassengerCount('1');
     setIsLoading(false);
   };
@@ -411,9 +367,7 @@ const TrainSearchScreen = () => {
       <TextInput
         style={formStyles.input}
         placeholder="Return date (optional)"
-        placeholderTextColor={
-          formStyles.input.placeholderTextColor || '#999999'
-        }
+        placeholderTextColor={colors.placeholderText}
       />
 
       <TextInput
@@ -422,9 +376,7 @@ const TrainSearchScreen = () => {
         keyboardType="number-pad"
         value={passengerCount}
         onChangeText={setPassengerCount}
-        placeholderTextColor={
-          formStyles.input.placeholderTextColor || '#999999'
-        }
+        placeholderTextColor={colors.placeholderText}
       />
 
       <TouchableOpacity style={buttonStyles.primary} onPress={handleSearch}>

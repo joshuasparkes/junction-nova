@@ -1,43 +1,118 @@
-import React from 'react';
-import {View, Text, StyleSheet, FlatList} from 'react-native';
-import { screenStyles, cardStyles, colors } from '../../styles/commonStyles'; // Adjust path as needed
+import React, {useState, useEffect} from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
+import {
+  screenStyles,
+  cardStyles,
+  colors,
+  buttonStyles,
+} from '../../styles/commonStyles';
 
-// Placeholder for what a booking item might look like
+const API_BASE = Platform.select({
+  ios: 'http://192.168.1.22:3000', // iOS simulator
+  android: 'http://10.0.2.2:3000', // Android emulator
+  default: 'http://192.168.1.22:3000', // physical device on your LAN
+});
+
 interface BookingItem {
-  id: string;
-  type: 'Flight' | 'Hotel' | 'Train' | 'Car'; // Example type
-  details: string;
-  date: string;
-  status: string;
+  id: number;
+  type_id: string;
+  cancellation_id: string | null;
 }
 
-const DUMMY_BOOKINGS: BookingItem[] = [
-  {id: '1', type: 'Flight', details: 'CDG to JFK, Air France AF002', date: '2025-08-24', status: 'Confirmed'},
-  {id: '2', type: 'Hotel', details: 'Grand Hyatt New York, 3 Nights', date: '2025-08-24', status: 'Confirmed'},
-  {id: '3', type: 'Flight', details: 'LHR to SFO, British Airways BA285', date: '2025-09-10', status: 'Pending'},
-];
-
 const BookingsScreen = () => {
+  const [bookings, setBookings] = useState<BookingItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      const url = `${API_BASE}/db-data`;
+      console.log(`Attempting to fetch from: ${url}`);
+
+      try {
+        const resp = await fetch(url, {
+          method: 'GET',
+          headers: {Accept: 'application/json'},
+        });
+        console.log(`Response status: ${resp.status}`);
+
+        if (!resp.ok) {
+          throw new Error(`Server error ${resp.status}`);
+        }
+        const data: BookingItem[] = await resp.json();
+        console.log('Received data:', data);
+        setBookings(data);
+      } catch (err: any) {
+        console.error('Error loading bookings:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, []);
+
   const renderBookingItem = ({item}: {item: BookingItem}) => (
     <View style={cardStyles.container}>
-      <Text style={cardStyles.title}>{item.type} Booking: {item.details}</Text>
-      <Text style={cardStyles.text}>Date: {item.date}</Text>
-      <Text style={[cardStyles.text, item.status === 'Confirmed' ? styles.confirmedStatus : styles.pendingStatus]}>
-        Status: {item.status}
-      </Text>
+      <Text style={cardStyles.title}>Booking #{item.id}</Text>
+      <Text style={cardStyles.text}>ID: {item.type_id}</Text>
     </View>
   );
 
+  if (loading) {
+    return (
+      <View style={[screenStyles.container, styles.center]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[screenStyles.container, styles.center]}>
+        <Text style={styles.errorText}>Error: {error}</Text>
+        <TouchableOpacity
+          style={buttonStyles.primary}
+          onPress={() => {
+            setLoading(true);
+            setError(null);
+            setBookings([]);
+            fetch(`${API_BASE}/db-data`)
+              .then(r => r.json())
+              .then(data => setBookings(data))
+              .catch(e => setError(e.message))
+              .finally(() => setLoading(false));
+          }}>
+          <Text style={buttonStyles.primaryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={screenStyles.container}>
-      <Text style={screenStyles.title}>My Bookings</Text>
-      {DUMMY_BOOKINGS.length > 0 ? (
-        <FlatList
-          data={DUMMY_BOOKINGS}
-          renderItem={renderBookingItem}
-          keyExtractor={item => item.id}
-          style={styles.list}
-        />
+      <View style={screenStyles.titleContainer}>
+        <Text style={screenStyles.title}>My trips</Text>
+      </View>
+      {bookings.length > 0 ? (
+        <View style={screenStyles.listContainer}>
+          <FlatList
+            data={bookings}
+            renderItem={renderBookingItem}
+            keyExtractor={item => item.id.toString()}
+            style={styles.list}
+            contentContainerStyle={screenStyles.flatListContent}
+          />
+        </View>
       ) : (
         <Text style={styles.emptyText}>You have no bookings yet.</Text>
       )}
@@ -49,19 +124,28 @@ const styles = StyleSheet.create({
   list: {
     width: '100%',
   },
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   emptyText: {
     fontSize: 16,
     color: colors.white,
     marginTop: 20,
   },
+  errorText: {
+    fontSize: 16,
+    color: 'red',
+    marginBottom: 10,
+  },
   confirmedStatus: {
-    color: 'green', // Or use a color from your theme
+    color: 'green',
     fontWeight: 'bold',
   },
   pendingStatus: {
-    color: colors.primary, // Or use a color from your theme
+    color: colors.primary,
     fontWeight: 'bold',
-  }
+  },
 });
 
 export default BookingsScreen;

@@ -12,6 +12,13 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {CarRentalStackParamList} from '../../navigation/types';
 import {mockCarRentalsData, CarRental} from '../../data/mockData';
+import {
+  screenStyles,
+  formStyles,
+  buttonStyles,
+  cardStyles,
+  colors,
+} from '../../styles/commonStyles';
 
 type CarRentalSearchScreenNavigationProp = StackNavigationProp<
   CarRentalStackParamList,
@@ -35,15 +42,13 @@ const CarRentalSearchScreen = () => {
 
   const renderResultItem = ({item}: {item: CarRental}) => {
     return (
-      <View style={styles.resultItemCard}>
-        <Text style={styles.resultItemTitle}>
+      <View style={cardStyles.container}>
+        <Text style={cardStyles.title}>
           {item.company} - {item.type}
         </Text>
-        <Text style={styles.resultItemDetail}>
-          Pick-up: {item.pickupLocation}
-        </Text>
-        <Text style={styles.resultItemDetail}>Features: {item.features}</Text>
-        <Text style={styles.resultItemPrice}>{item.pricePerDay} / day</Text>
+        <Text style={cardStyles.text}>Pick-up: {item.pickupLocation}</Text>
+        <Text style={cardStyles.text}>Features: {item.features}</Text>
+        <Text style={cardStyles.price}>{item.pricePerDay} / day</Text>
         <TouchableOpacity
           style={styles.bookButton}
           onPress={() => navigation.navigate('CarRentalBooking', {car: item})}>
@@ -55,8 +60,8 @@ const CarRentalSearchScreen = () => {
 
   if (showResults) {
     return (
-      <View style={styles.screenContainer}>
-        <Text style={styles.screenTitle}>Car Rental Results</Text>
+      <View style={screenStyles.container}>
+        <Text style={screenStyles.title}>Car Rental Results</Text>
         {resultsData.length > 0 ? (
           <FlatList
             data={resultsData}
@@ -70,125 +75,62 @@ const CarRentalSearchScreen = () => {
           </Text>
         )}
         <TouchableOpacity
-          style={styles.primaryButton}
+          style={buttonStyles.primary}
           onPress={handleNewSearch}>
-          <Text style={styles.primaryButtonText}>New Search</Text>
+          <Text style={buttonStyles.primaryText}>New Search</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.screenContainer}>
-      <Text style={styles.screenTitle}>Search Car Rentals</Text>
+    <View style={screenStyles.container}>
+      <Text style={screenStyles.title}>Search Car Rentals</Text>
       <TextInput
-        style={styles.input}
+        style={formStyles.input}
         placeholder="Pick-up location"
-        placeholderTextColor="#999999"
+        placeholderTextColor={colors.placeholderText}
       />
       <TextInput
-        style={styles.input}
+        style={formStyles.input}
         placeholder="Drop-off location (if different)"
-        placeholderTextColor="#999999"
+        placeholderTextColor={colors.placeholderText}
       />
       <TextInput
-        style={styles.input}
+        style={formStyles.input}
         placeholder="Pick-up date & time"
-        placeholderTextColor="#999999"
+        placeholderTextColor={colors.placeholderText}
       />
       <TextInput
-        style={styles.input}
+        style={formStyles.input}
         placeholder="Drop-off date & time"
-        placeholderTextColor="#999999"
+        placeholderTextColor={colors.placeholderText}
       />
       <TextInput
-        style={styles.input}
+        style={formStyles.input}
         placeholder="Driver's age"
-        placeholderTextColor="#999999"
+        placeholderTextColor={colors.placeholderText}
       />
-      <TouchableOpacity style={styles.primaryButton} onPress={handleSearch}>
-        <Text style={styles.primaryButtonText}>Search Cars</Text>
+      <TouchableOpacity style={buttonStyles.primary} onPress={handleSearch}>
+        <Text style={buttonStyles.primaryText}>Search Cars</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#022E79',
-    paddingTop: Platform.OS === 'ios' ? 40 : 20,
-  },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 30,
-  },
-  input: {
-    width: '90%',
-    backgroundColor: '#FFFFFF',
-    color: '#000000',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 8,
-    fontSize: 16,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#DDDDDD',
-  },
-  primaryButton: {
-    backgroundColor: '#FFA500',
-    paddingVertical: 14,
-    paddingHorizontal: 35,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-    width: '90%',
-  },
-  primaryButtonText: {color: '#022E79', fontSize: 18, fontWeight: 'bold'},
   resultsList: {width: '100%', marginTop: 10},
-  resultItemCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
-    marginHorizontal: 5,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  resultItemTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 5,
-  },
-  resultItemDetail: {fontSize: 14, color: '#555555', marginBottom: 3},
-  resultItemPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#022E79',
-    marginTop: 8,
-    textAlign: 'right',
-    marginBottom: 10,
-  },
   bookButton: {
     backgroundColor: '#28A745',
     paddingVertical: 10,
     borderRadius: 5,
     alignItems: 'center',
-    marginTop: 5,
+    marginTop: 10,
   },
-  bookButtonText: {color: '#FFFFFF', fontSize: 16, fontWeight: 'bold'},
+  bookButtonText: {color: colors.white, fontSize: 16, fontWeight: 'bold'},
   placeholderText: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: colors.textDark,
     textAlign: 'center',
     marginVertical: 20,
   },
