@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -29,7 +30,11 @@ type FlightBookingScreenNavigationProp = StackNavigationProp<
   'FlightBooking'
 >;
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = Platform.select({
+  ios: 'http://192.168.1.22:3000',
+  android: 'http://10.0.2.2:3000',
+  default: 'http://192.168.1.22:3000',
+});
 
 const FlightBookingScreen = () => {
   const route = useRoute<FlightBookingScreenRouteProp>();
