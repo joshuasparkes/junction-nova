@@ -31,9 +31,9 @@ type FlightBookingScreenNavigationProp = StackNavigationProp<
 >;
 
 const API_BASE = Platform.select({
-  ios: 'http://192.168.1.22:3000',
-  android: 'http://10.0.2.2:3000',
-  default: 'http://192.168.1.22:3000',
+  ios: 'http://192.168.1.22:4000',
+  android: 'http://10.0.2.2:4000',
+  default: 'http://192.168.1.22:4000',
 });
 
 const FlightBookingScreen = () => {

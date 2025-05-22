@@ -37,9 +37,9 @@ import {
 // >;
 
 const API_BASE = Platform.select({
-  ios: 'http://192.168.1.22:3000',
-  android: 'http://10.0.2.2:3000',
-  default: 'http://192.168.1.22:3000',
+  ios: 'http://192.168.1.22:4000',
+  android: 'http://10.0.2.2:4000',
+  default: 'http://192.168.1.22:4000',
 });
 const TrainSearchScreen = () => {
   const [showResults, setShowResults] = useState(false);
@@ -61,6 +61,11 @@ const TrainSearchScreen = () => {
     useState<Place | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   // No need for apiKey in frontend anymore
+
+  // ADD THIS LOG: To see showResults on every render
+  console.log(
+    `TrainSearchScreen rendering cycle. isLoading: ${isLoading}, showResults: ${showResults}`,
+  );
 
   useEffect(() => {
     // Pre-fill logic can remain for testing if desired
@@ -253,13 +258,20 @@ const TrainSearchScreen = () => {
             numPassengers,
           ),
         );
+        console.log(
+          `Transformed ${transformedTrains.length} trains. First ID: ${
+            transformedTrains.length > 0 ? transformedTrains[0].id : 'N/A'
+          }`,
+        );
         setResultsData(transformedTrains);
+        setShowResults(true);
+        console.log('handleSearch: setShowResults(true) was just called.');
       } else {
         console.log('No train offers found from backend or data was empty.');
         setResultsData([]);
         Alert.alert('No Results', 'No train offers found.');
+        setShowResults(false);
       }
-      setShowResults(true);
     } catch (error: any) {
       console.error('Error during train search process:', error);
       Alert.alert(
@@ -269,6 +281,9 @@ const TrainSearchScreen = () => {
       setShowResults(false); // Don't show results if search failed
     } finally {
       setIsLoading(false);
+      console.log(
+        'handleSearch: finally block executed. isLoading should be false.',
+      );
     }
   };
 
@@ -283,8 +298,14 @@ const TrainSearchScreen = () => {
     setArrivalStationSuggestions([]);
     setDepartureDate(new Date(2025, 5, 24));
     setPassengerCount('1');
-    setIsLoading(false);
+    setIsLoading(false); // Ensure isLoading is false here too
+    console.log('handleNewSearch called, showResults is false.');
   };
+
+  // ADD THIS LOG: To see showResults right before the conditional render
+  console.log(
+    `TrainSearchScreen: About to check render conditions. isLoading: ${isLoading}, showResults: ${showResults}`,
+  );
 
   if (isLoading) {
     return (
@@ -294,9 +315,14 @@ const TrainSearchScreen = () => {
       </View>
     );
   }
-  // ... rest of the UI (TrainResultsList, form inputs) remains the same
-  // Ensure all PlaceInput and DatePickerInput components are correctly wired up
-  // ... (JSX for the screen)
+
+  if (showResults) {
+    // This should render your MINIMAL TrainResultsList for testing
+    return (
+      <TrainResultsList results={resultsData} onNewSearch={handleNewSearch} />
+    );
+  }
+
   return (
     <View style={screenStyles.container}>
       <Text style={screenStyles.title}>Search Trains</Text>

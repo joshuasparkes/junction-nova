@@ -78,16 +78,14 @@ const DatePickerInput: React.FC<DatePickerInputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '90%',
-    marginBottom: 5,
+    width: '100%',
+    marginBottom: 15,
   },
   inputTouchable: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 15,
     paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#DDDDDD',
+    borderRadius: 12,
     justifyContent: 'center',
     minHeight: 48,
   },

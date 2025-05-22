@@ -76,18 +76,16 @@ const PlaceInput: React.FC<PlaceInputProps> = ({
 // Styles needed for this component (copied/adapted from FlightSearchScreen)
 const styles = StyleSheet.create({
   container: {
-    width: '90%',
-    marginBottom: 5,
+    width: '100%',
+    marginBottom: 15,
   },
   input: {
     backgroundColor: '#FFFFFF',
     color: '#000000',
     paddingHorizontal: 15,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#DDDDDD',
   },
   suggestionsContainer: {
     backgroundColor: '#FFFFFF',

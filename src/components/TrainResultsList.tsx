@@ -27,6 +27,10 @@ const TrainResultsList: React.FC<TrainResultsListProps> = ({
   results,
   onNewSearch,
 }) => {
+  console.log(
+    `TrainResultsList received ${results.length} results. First result:`,
+    results.length > 0 ? JSON.stringify(results[0]) : 'No results received',
+  );
   const navigation = useNavigation<TrainResultsNavigationProp>();
 
   const renderResultItem = ({item}: {item: Train}) => {
@@ -77,12 +81,12 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     padding: 20,
-    // Background color will be set by the parent screen (TrainSearchScreen)
+    backgroundColor: '#f5f5f7', // Temporary: light red background for debugging
   },
   screenTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#FFFFFF', // Assuming parent background is dark
+    color: '#000000', // Assuming parent background is dark
     marginBottom: 20,
   },
   resultsList: {
