@@ -3,14 +3,12 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Platform,
   ScrollView,
   Alert,
   TextInput,
   FlatList,
 } from 'react-native';
-import PlaceInput from '../../components/PlaceInput';
 import DatePickerInput from '../../components/DatePickerInput';
 import {formatDateForApi} from '../../utils/flightUtils';
 import {
@@ -18,7 +16,13 @@ import {
   buttonStyles,
   formStyles,
   colors,
+  resultStyles,
 } from '../../styles/commonStyles';
+import {
+  ApiItinerary,
+  MultimodalSearchResponse,
+  MultimodalSearchPayload,
+} from '../../types';
 
 // API Base URL
 const API_BASE = Platform.select({
@@ -27,45 +31,24 @@ const API_BASE = Platform.select({
   default: 'http://192.168.1.22:4000',
 });
 
-// Types for multimodal search
-interface Segment {
-  mode: string;
-  from: string;
-  to: string;
-  depart_utc: string | null;
-  arrive_utc: string | null;
-  carrier: string;
-  local_departure?: string;
-  local_arrival?: string;
-}
-
-interface Itinerary {
-  price: number;
-  currency: number | string; // API returns conversion rate, not currency code
-  duration_total: number; // in seconds
-  segments: Segment[];
-  booking_token: string;
-}
-
-interface MultimodalSearchResponse {
-  itineraries: Itinerary[];
-}
-
 const MultimodalSearchScreen = () => {
-  // State for search form
-  const [originText, setOriginText] = useState('');
-  const [destinationText, setDestinationText] = useState('');
+  const getFiveDaysFromNow = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 5);
+    return date;
+  };
+
+  const [originText, setOriginText] = useState('PAR');
+  const [destinationText, setDestinationText] = useState('LON');
   const [departureDate, setDepartureDate] = useState<Date | undefined>(
-    new Date(),
+    getFiveDaysFromNow(),
   );
   const [passengerCount, setPassengerCount] = useState('1');
 
-  // State for API interaction
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [results, setResults] = useState<Itinerary[]>([]);
+  const [results, setResults] = useState<ApiItinerary[]>([]);
 
-  // Function to search for multimodal itineraries
   const handleSearch = async () => {
     if (!originText || !destinationText || !departureDate) {
       Alert.alert(
@@ -77,11 +60,11 @@ const MultimodalSearchScreen = () => {
 
     setIsLoading(true);
     try {
-      const payload = {
+      const payload: MultimodalSearchPayload = {
         origin: originText,
         destination: destinationText,
         date_from: formatDateForApi(departureDate),
-        date_to: formatDateForApi(departureDate), // Same day for simplicity
+        date_to: formatDateForApi(departureDate),
         adults: parseInt(passengerCount, 10) || 1,
       };
 
@@ -117,28 +100,22 @@ const MultimodalSearchScreen = () => {
     }
   };
 
-  // Function to start a new search
   const handleNewSearch = () => {
     setShowResults(false);
     setResults([]);
   };
 
-  // Function to open booking link
   const handleBooking = (bookingToken: string) => {
     Alert.alert(
       'Booking',
       'This would redirect to Kiwi.com for booking with token: ' + bookingToken,
     );
-    // In a real app, you would use Linking to open the URL:
-    // Linking.openURL(`https://www.kiwi.com/en/booking?token=${bookingToken}`);
   };
 
-  // Helper function to format UTC timestamp to readable time
   const formatTime = (
     timestamp: number | string | null,
     localTime?: string,
   ): string => {
-    // If we have a local time string, use that
     if (localTime) {
       const date = new Date(localTime);
       return date.toLocaleTimeString([], {
@@ -148,7 +125,6 @@ const MultimodalSearchScreen = () => {
       });
     }
 
-    // Fallback to timestamp if available
     if (timestamp && typeof timestamp === 'number') {
       const date = new Date(timestamp * 1000);
       return date.toLocaleTimeString([], {
@@ -161,14 +137,26 @@ const MultimodalSearchScreen = () => {
     return '--:--';
   };
 
-  // Helper function to format duration in minutes to readable format
   const formatDuration = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     return `${hours}h ${minutes}m`;
   };
 
-  // Render loading state
+  const getAirportInfo = (segment: any): string => {
+    if (segment.flyFrom && segment.flyTo) {
+      return `${segment.flyFrom} → ${segment.flyTo}`;
+    }
+    return `${segment.from} → ${segment.to}`;
+  };
+
+  const getFlightNumber = (segment: any): string => {
+    if (segment.flight_no && segment.airline) {
+      return `${segment.airline} ${segment.flight_no}`;
+    }
+    return segment.carrier || '';
+  };
+
   if (isLoading) {
     return (
       <View style={screenStyles.loadingContainer}>
@@ -179,7 +167,6 @@ const MultimodalSearchScreen = () => {
     );
   }
 
-  // Render results
   if (showResults) {
     return (
       <View style={screenStyles.container}>
@@ -189,40 +176,82 @@ const MultimodalSearchScreen = () => {
           data={results}
           keyExtractor={(item, index) => `itinerary-${index}`}
           renderItem={({item}) => (
-            <View style={styles.resultItem}>
-              <View style={styles.resultHeader}>
-                <Text style={styles.priceText}>£{item.price}</Text>
-                <Text style={styles.durationText}>
+            <View style={resultStyles.item}>
+              <View style={resultStyles.header}>
+                <Text style={resultStyles.priceText}>£{item.price}</Text>
+                <Text style={resultStyles.durationText}>
                   {formatDuration(item.duration_total)}
                 </Text>
               </View>
 
+              <View style={resultStyles.routeOverview}>
+                <Text style={resultStyles.routeText}>
+                  {item.cityFrom} ({item.cityCodeFrom}) → {item.cityTo} (
+                  {item.cityCodeTo})
+                </Text>
+                {item.countryFrom && item.countryTo && (
+                  <Text style={resultStyles.countryText}>
+                    {item.countryFrom.name} → {item.countryTo.name}
+                  </Text>
+                )}
+              </View>
+
+              {item.virtual_interlining && (
+                <View style={resultStyles.badge}>
+                  <Text style={resultStyles.badgeText}>
+                    Virtual Interlining
+                  </Text>
+                </View>
+              )}
+
+              {item.airlines && item.airlines.length > 0 && (
+                <View style={resultStyles.airlinesContainer}>
+                  <Text style={resultStyles.airlinesLabel}>Airlines: </Text>
+                  <Text style={resultStyles.airlinesText}>
+                    {item.airlines.join(', ')}
+                  </Text>
+                </View>
+              )}
+
               {item.segments.map((segment, idx) => (
-                <View key={`segment-${idx}`} style={styles.segment}>
-                  <View style={styles.segmentHeader}>
-                    <Text style={styles.modeText}>
+                <View key={`segment-${idx}`} style={resultStyles.segment}>
+                  <View style={resultStyles.segmentHeader}>
+                    <Text style={resultStyles.modeText}>
                       {segment.mode === 'aircraft' ? '✈️' : '🚆'}{' '}
-                      {segment.carrier}
+                      {getFlightNumber(segment)}
+                    </Text>
+                    <Text style={resultStyles.airportText}>
+                      {getAirportInfo(segment)}
                     </Text>
                   </View>
-                  <View style={styles.segmentDetails}>
-                    <View style={styles.segmentTime}>
-                      <Text style={styles.timeText}>
+                  <View style={resultStyles.segmentDetails}>
+                    <View style={resultStyles.segmentTime}>
+                      <Text style={resultStyles.timeText}>
                         {formatTime(
                           segment.depart_utc,
                           segment.local_departure,
                         )}
                       </Text>
-                      <Text style={styles.cityText}>{segment.from}</Text>
+                      <Text style={resultStyles.cityText}>{segment.from}</Text>
+                      {segment.flyFrom && (
+                        <Text style={resultStyles.airportCodeText}>
+                          {segment.flyFrom}
+                        </Text>
+                      )}
                     </View>
-                    <View style={styles.segmentDivider}>
-                      <Text style={styles.dividerLine}>———</Text>
+                    <View style={resultStyles.segmentDivider}>
+                      <Text style={resultStyles.dividerLine}>———</Text>
                     </View>
-                    <View style={styles.segmentTime}>
-                      <Text style={styles.timeText}>
+                    <View style={resultStyles.segmentTime}>
+                      <Text style={resultStyles.timeText}>
                         {formatTime(segment.arrive_utc, segment.local_arrival)}
                       </Text>
-                      <Text style={styles.cityText}>{segment.to}</Text>
+                      <Text style={resultStyles.cityText}>{segment.to}</Text>
+                      {segment.flyTo && (
+                        <Text style={resultStyles.airportCodeText}>
+                          {segment.flyTo}
+                        </Text>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -237,9 +266,12 @@ const MultimodalSearchScreen = () => {
           )}
           ListFooterComponent={
             <TouchableOpacity
-              style={[styles.secondaryButton, styles.newSearchButton]}
+              style={[
+                buttonStyles.secondary,
+                {marginTop: 20, marginBottom: 40},
+              ]}
               onPress={handleNewSearch}>
-              <Text style={styles.secondaryButtonText}>New Search</Text>
+              <Text style={buttonStyles.secondaryText}>New Search</Text>
             </TouchableOpacity>
           }
         />
@@ -247,19 +279,20 @@ const MultimodalSearchScreen = () => {
     );
   }
 
-  // Render search form
   return (
     <ScrollView
       contentContainerStyle={screenStyles.contentContainer}
       keyboardShouldPersistTaps="handled"
       style={screenStyles.scrollViewOuter}>
-      <View style={styles.screenContainerInput}>
+      <View style={screenStyles.screenContainerInput}>
         <Text style={screenStyles.title}>Multimodal Search</Text>
-        <Text style={styles.subtitle}>Find flights + trains in one search</Text>
+        <Text style={screenStyles.subtitle}>
+          Find flights + trains in one search
+        </Text>
 
         <TextInput
           style={formStyles.input}
-          placeholder="Origin city (e.g., London)"
+          placeholder="Origin city (e.g., PAR)"
           placeholderTextColor={colors.placeholderText}
           value={originText}
           onChangeText={setOriginText}
@@ -267,7 +300,7 @@ const MultimodalSearchScreen = () => {
 
         <TextInput
           style={formStyles.input}
-          placeholder="Destination city (e.g., Paris)"
+          placeholder="Destination city (e.g., LON)"
           placeholderTextColor={colors.placeholderText}
           value={destinationText}
           onChangeText={setDestinationText}
@@ -296,120 +329,5 @@ const MultimodalSearchScreen = () => {
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  screenContainerInput: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    width: '100%',
-  },
-  placeInputWrapper: {
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  dateInputTouchable: {
-    justifyContent: 'center',
-  },
-  datePickerText: {
-    fontSize: 16,
-    color: colors.inputText,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textMedium,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  secondaryButton: {
-    backgroundColor: colors.white,
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 12,
-    alignItems: 'center',
-    width: '100%',
-    marginVertical: 10,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  secondaryButtonText: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  // Result styles
-  resultItem: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  resultHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.inputBorder,
-    paddingBottom: 10,
-  },
-  priceText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  durationText: {
-    fontSize: 16,
-    color: colors.textMedium,
-  },
-  segment: {
-    marginBottom: 15,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.inputBorder,
-  },
-  segmentHeader: {
-    marginBottom: 10,
-  },
-  modeText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.primaryText,
-  },
-  segmentDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  segmentTime: {
-    alignItems: 'center',
-    width: '40%',
-  },
-  segmentDivider: {
-    width: '20%',
-    alignItems: 'center',
-  },
-  dividerLine: {
-    color: colors.inputBorder,
-  },
-  timeText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.primaryText,
-  },
-  cityText: {
-    fontSize: 14,
-    color: colors.textMedium,
-  },
-  newSearchButton: {
-    marginTop: 20,
-    marginBottom: 40,
-  },
-});
 
 export default MultimodalSearchScreen;

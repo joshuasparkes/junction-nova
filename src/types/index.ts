@@ -346,3 +346,63 @@ export interface ListOffersResponse {
   [key: string]: any;
 }
 // === MOVED FROM src/types/multimodal.ts END ===
+// === MULTIMODAL SEARCH TYPES ===
+export interface ApiSegment {
+  mode: string;
+  from: string;
+  to: string;
+  depart_utc: string | null;
+  arrive_utc: string | null;
+  carrier: string;
+  local_departure?: string;
+  local_arrival?: string;
+  // Additional fields from Kiwi API
+  flyFrom?: string;
+  flyTo?: string;
+  cityFrom?: string;
+  cityTo?: string;
+  cityCodeFrom?: string;
+  cityCodeTo?: string;
+  flight_no?: number;
+  operating_flight_no?: string;
+  airline?: string;
+  operating_carrier?: string;
+  vehicle_type?: string;
+}
+
+export interface ApiItinerary {
+  price: number;
+  currency: number | string;
+  duration_total: number;
+  segments: ApiSegment[];
+  booking_token: string;
+  // Additional fields from Kiwi API
+  virtual_interlining?: boolean;
+  countryFrom?: {
+    code: string;
+    name: string;
+  };
+  countryTo?: {
+    code: string;
+    name: string;
+  };
+  airlines?: string[];
+  flyFrom?: string;
+  flyTo?: string;
+  cityFrom?: string;
+  cityTo?: string;
+  cityCodeFrom?: string;
+  cityCodeTo?: string;
+}
+
+export interface MultimodalSearchResponse {
+  itineraries: ApiItinerary[];
+}
+
+export interface MultimodalSearchPayload {
+  origin: string;
+  destination: string;
+  date_from: string;
+  date_to: string;
+  adults: number;
+}

@@ -52,6 +52,22 @@ export const buttonStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  secondary: {
+    backgroundColor: colors.white,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 12,
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  secondaryText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
 
 export const screenStyles = StyleSheet.create({
@@ -79,6 +95,12 @@ export const screenStyles = StyleSheet.create({
     textAlign: 'left',
     fontFamily: 'Figtree-SemiBold',
   },
+  subtitle: {
+    fontSize: 16,
+    color: colors.textMedium,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -100,6 +122,12 @@ export const screenStyles = StyleSheet.create({
   },
   flatListContent: {
     alignItems: 'center',
+  },
+  screenContainerInput: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    width: '100%',
   },
 });
 
@@ -137,6 +165,129 @@ export const cardStyles = StyleSheet.create({
     textAlign: 'right',
   },
 });
+
+export const resultStyles = StyleSheet.create({
+  item: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.inputBorder,
+    paddingBottom: 10,
+  },
+  priceText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.primary,
+  },
+  durationText: {
+    fontSize: 16,
+    color: colors.textMedium,
+  },
+  segment: {
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.inputBorder,
+  },
+  segmentHeader: {
+    marginBottom: 10,
+  },
+  modeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.primaryText,
+  },
+  segmentDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  segmentTime: {
+    alignItems: 'center',
+    width: '40%',
+  },
+  segmentDivider: {
+    width: '20%',
+    alignItems: 'center',
+  },
+  dividerLine: {
+    color: colors.inputBorder,
+  },
+  timeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.primaryText,
+  },
+  cityText: {
+    fontSize: 14,
+    color: colors.textMedium,
+  },
+  routeOverview: {
+    marginBottom: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.inputBorder,
+  },
+  routeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.textDark,
+    marginBottom: 4,
+  },
+  countryText: {
+    fontSize: 14,
+    color: colors.textMedium,
+  },
+  badge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+  },
+  badgeText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  airlinesContainer: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  airlinesLabel: {
+    fontSize: 14,
+    color: colors.textMedium,
+    fontWeight: 'bold',
+  },
+  airlinesText: {
+    fontSize: 14,
+    color: colors.textMedium,
+  },
+  airportText: {
+    fontSize: 12,
+    color: colors.textMedium,
+    marginTop: 2,
+  },
+  airportCodeText: {
+    fontSize: 12,
+    color: colors.textMedium,
+    fontWeight: 'bold',
+  },
+});
+
 export const globalTextStyles = StyleSheet.create({
   default: {
     fontFamily: 'Figtree-Regular',
